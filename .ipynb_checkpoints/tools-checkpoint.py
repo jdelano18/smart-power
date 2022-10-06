@@ -3,6 +3,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 import time
 from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import NoSuchElementException
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -26,11 +27,13 @@ def loadMoreHomes(driver):
     keeps clikcing on the load more homes button on a page until theres no more
     """
     more_homes = True
+    print("\t Loading homes", end="")
     while more_homes:
         try:
             load_more = driver.find_element(By.XPATH, '//button[normalize-space()="Load more homes"]')
             driver.execute_script("arguments[0].click();", load_more)
-            time.sleep(5)
+            time.sleep(3)
+            print(".", end="")
         except:
             # print("No more homes to load...")
             more_homes = False
@@ -52,6 +55,7 @@ def scrapeItUp(driver):
     
     returns: pandas DataFrame, df
     """
+    print("\n\t Scraping", end="")
     keep_scraping = True
     index = 1
     data = []
@@ -71,7 +75,11 @@ def scrapeItUp(driver):
             ## flex-cash thing -- just drop it
             if result[0] == 'Flex Cash':
                 result = result[1:]
-
+            
+            ## Featured tag -- drop
+            if result[0] == 'Featured':
+                result = result[1:]
+            
             ## reduced price
             if result[1][0] == '$' and result[2][0] == '$':
                 result.pop(2)
@@ -84,8 +92,7 @@ def scrapeItUp(driver):
                 result[3] = str(i+b) + " ba"
                 result.pop(4)
 
-
-            assert len(result) == 7, "**** Some other data format issue ****"
+            assert len(result) == 7 
 
             ## Rearranging columns for data
             if result[0] == "Future release":
@@ -100,10 +107,16 @@ def scrapeItUp(driver):
 
             data.append(result)
             index += 1
-        except:
+        except AssertionError:
+            print("**** Some other data format issue ****")
+            keep_scraping = False
+        except NoSuchElementException:
             print(f"{len(data)}. Done!")
             keep_scraping = False
-            
+        except:
+            print("Shit is broken")
+            keep_scraping = False
+
     df = pd.DataFrame(data, columns = ["Availability", "Price", "Beds", "Baths", "Sqft", "Address", "Community", "URL"])
     return df
 
@@ -114,9 +127,9 @@ def cleanItUp(df):
     df['Beds'] = df['Beds'].apply(lambda x : float(x.replace(" bd","")))
     df['Baths'] = df['Baths'].apply(lambda x : float(x.replace(" ba","")))
     df['Sqft'] = df['Sqft'].apply(lambda x : float(x.replace(" ft²", "").replace(",","")))
-    df['Price'] = df.Price.replace('\D', '', regex=True).astype(int)
-    df['Price'] = df.apply(lambda row: row['Price'] if row['Availability'] != 'Future release' 
-                        else row['Price']*1000, axis=1)
+    # df['Price'] = df.Price.replace('\D', '', regex=True).astype(int)
+    # df['Price'] = df.apply(lambda row: row['Price'] if row['Availability'] != 'Future release' 
+    #                     else row['Price']*1000, axis=1)
     
     return df
     
