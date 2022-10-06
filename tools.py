@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
-
+import sys
 
 def closeCookies(driver):
     """
@@ -15,8 +15,9 @@ def closeCookies(driver):
     """
     try:
         driver.find_element(By.XPATH, "/html/body/div[2]/div[2]/div/button").click()
+        print("\t Closed cookies window. Continue...")
     except:
-        print("No cookies window. Continue...")
+        print("\t No cookies window. Continue...")
 
     time.sleep(5)
 
@@ -31,8 +32,9 @@ def loadMoreHomes(driver):
             driver.execute_script("arguments[0].click();", load_more)
             time.sleep(5)
         except:
-            print("No more homes to load... Scraping text")
+            # print("No more homes to load...")
             more_homes = False
+        
 
 def myHTMLParser(s):
     """
@@ -54,39 +56,41 @@ def scrapeItUp(driver):
     index = 1
     data = []
     while keep_scraping:
-        
-        ## skip over the stupid Year-end sales event ad that they have on each page
-        if index == 2:
-            index += 1
-            continue
+        if index % 10 == 0:
+            print(".", end='')
 
         try:
-            ## current home
             result = driver.find_element(By.XPATH, 
                             f'//*[@id="main"]/div/div[1]/div[2]/div/div[2]/div/div[2]/div[{index}]').text.splitlines()
 
-            ## data format error
-            if len(result) != 7:
+            ## skip over the Ad
+            if index == 2 and 'Year-End Sales Event' in result[0]:
+                index += 1
+                continue
 
-                ## flex-cash indicator -- just drop it, irrelevant
-                if result[0] == 'Flex Cash':
-                    result = result[1:]
+            ## flex-cash thing -- just drop it
+            if result[0] == 'Flex Cash':
+                result = result[1:]
 
-                ## weird thing where sometimes a half bath is a separate column.
-                ## grab that and add it to the total baths (divide by 2)
-                if 'half ba' in result[4]:
-                    i = int(result[4][0]) / 2
-                    b = int(result[3][0])
-                    result[3] = str(i+b) + " ba"
-                    result.pop(4)
-                
-                # well, still likely something could go wrong here
-                else:
-                    raise Exception("Some other data format issue -- debug this")
+            ## reduced price
+            if result[1][0] == '$' and result[2][0] == '$':
+                result.pop(2)
 
-            ## correct data format error with rearranging columns
+            ## weird thing where sometimes a half bath is a separate column.
+            ## grab that and add it to the total baths (divide by 2)
+            if 'half ba' in result[4]:
+                i = int(result[4][0]) / 2
+                b = int(result[3][0])
+                result[3] = str(i+b) + " ba"
+                result.pop(4)
+
+
+            assert len(result) == 7, "**** Some other data format issue ****"
+
+            ## Rearranging columns for data
             if result[0] == "Future release":
-                result.insert(5, result.pop(1))
+                result.pop(1)
+                result.insert(5, "N/A")
 
             ## get link
             html = driver.find_element(By.XPATH, 
@@ -96,11 +100,10 @@ def scrapeItUp(driver):
 
             data.append(result)
             index += 1
-
         except:
-            print("Done Scraping info")
+            print(f"{len(data)}. Done!")
             keep_scraping = False
-
+            
     df = pd.DataFrame(data, columns = ["Availability", "Price", "Beds", "Baths", "Sqft", "Address", "Community", "URL"])
     return df
 
