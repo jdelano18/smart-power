@@ -72,13 +72,10 @@ def scrapeItUp(driver):
                 index += 1
                 continue
 
-            ## flex-cash thing -- just drop it
-            if result[0] == 'Flex Cash':
+            ## drop all the stupid tags that are in the top right corner:
+            if result[0] not in ['Move-in ready', 'Under construction', 'Future release', 'Coming soon']:
                 result = result[1:]
-            
-            ## Featured tag -- drop
-            if result[0] == 'Featured':
-                result = result[1:]
+
             
             ## reduced price
             if result[1][0] == '$' and result[2][0] == '$':
