@@ -68,7 +68,8 @@ def scrapeItUp(driver):
                             f'//*[@id="main"]/div/div[1]/div[2]/div/div[2]/div/div[2]/div[{index}]').text.splitlines()
 
             ## skip over the Ad
-            if index == 2 and 'Year-End Sales Event' in result[0]:
+            ## OLD AD: if index == 2 and 'Year-End Sales Event' in result[0]:
+            if index == 2 and 'Limited time incentives' in result[0]:
                 index += 1
                 continue
 
@@ -81,6 +82,10 @@ def scrapeItUp(driver):
             if result[1][0] == '$' and result[2][0] == '$':
                 result.pop(2)
 
+            ## crossed out price and new low/mid/high estimate
+            if '$' in result[1] and '$' in result[2]:
+                result.pop(2)
+            
             ## weird thing where sometimes a half bath is a separate column.
             ## grab that and add it to the total baths (divide by 2)
             if 'half ba' in result[4]:
@@ -88,6 +93,7 @@ def scrapeItUp(driver):
                 b = int(result[3][0])
                 result[3] = str(i+b) + " ba"
                 result.pop(4)
+                
 
             assert len(result) == 7 
 
