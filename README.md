@@ -1,6 +1,6 @@
 # smart-power
  
-The goal of this project was to scrape the data from lennar.com, a home construction company, to get data about their existing and under-construction homes in the features inside them. We wanted to create a database where we could quickly search through all of the attributes to answer questions like: how many homes does lennar have that have motion sensors? how do they display that to their customers? The use case for this information is confidential.
+The goal of this project was to scrape the data from lennar.com, the second largest homebuilder in the US, to capture and analyze information about their existing and under-construction homes and the features included in each home. We wanted to create a database where we could quickly search through all of the attributes to answer questions like: how many homes does lennar have that have motion sensors? how do they display that to their customers? The use case for this information is confidential.
 
 ### roadmap
 
