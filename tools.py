@@ -9,17 +9,27 @@ from bs4 import BeautifulSoup
 import json
 import pandas as pd
 import sys
+import numpy as np
 
 def closeCookies(driver):
     """
     finds the accept cookies window and clicks if it is there
     """
     try:
-        driver.find_element(By.XPATH, "/html/body/div[2]/div[2]/div/button").click()
+        driver.find_element(By.XPATH, "/html/body/div[3]/div[2]/div/div/div[2]/div/div/button").click()
         print("\t Closed cookies window. Continue...")
+    except NoSuchElementException:
+        try:
+            driver.find_element(By.XPATH, "/html/body/div[2]/div[2]/div/button").click()
+            print("\t Closed cookies window. Continue...")
+        except NoSuchElementException:
+            try:
+                driver.find_element(By.XPATH, "/html/body/div[2]/div[2]/div/div/div[2]/div/div/button").click()
+                print("\t Closed cookies window. Continue...")
+            except NoSuchElementException:
+                print("\t No cookies window. Continue...")
     except:
-        print("\t No cookies window. Continue...")
-
+        print("wtf")
     time.sleep(5)
 
 def loadMoreHomes(driver):
@@ -64,19 +74,57 @@ def scrapeItUp(driver):
             print(".", end='')
 
         try:
+            # print("hi")
             result = driver.find_element(By.XPATH, 
-                            f'//*[@id="main"]/div/div[1]/div[2]/div/div[2]/div/div[2]/div[{index}]').text.splitlines()
+                            f'//*[@id="main"]/div/div[1]/div[2]/div/div[3]/div/div[2]/div[{index}]').text.splitlines()
+            # print(result)
 
-            ## skip over the Ad
-            ## OLD AD: if index == 2 and 'Year-End Sales Event' in result[0]:
-            if index == 2 and 'Limited time incentives' in result[0]:
+            ## skip over the Ads
+            ## OLD AD: if index == 2 and 'Year-End Sales Event' in result[0]
+            if "Summer's on!" in result[0]:
                 index += 1
                 continue
-
+            
+            if result[0].startswith('Check out'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Final') and result[0].endswith('remain'):
+                index += 1
+                continue
+            
+            if result[0].startswith('BIG SAVINGS'):
+                index += 1
+                continue
+            
+            if result[0].startswith('Start your path'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Preview the homes'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Cirrus'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Save on move'):
+                index += 1
+                continue
+            
+            if result[0].startswith('Take advantage of'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Move-in ready homes available now'):
+                index += 1
+                continue
+            
             ## drop all the stupid tags that are in the top right corner:
-            if result[0] not in ['Move-in ready', 'Under construction', 'Future release', 'Coming soon']:
-                result = result[1:]
-
+            for _ in range(3):
+                if result[0] not in ['Move-in ready', 'Under construction', 'Future release', 'Coming soon']:
+                    result = result[1:]
             
             ## reduced price
             if result[1][0] == '$' and result[2][0] == '$':
@@ -95,16 +143,20 @@ def scrapeItUp(driver):
                 result.pop(4)
                 
 
-            assert len(result) == 7 
 
             ## Rearranging columns for data
             if result[0] == "Future release":
-                result.pop(1)
-                result.insert(5, "N/A")
+                # result.pop(1)
+                # result.insert(5, "N/A")
+                result = ['Future release']+[np.NaN]*6
 
+                
+            # final check
+            assert len(result) == 7 
+            
             ## get link
             html = driver.find_element(By.XPATH, 
-                            f'//*[@id="main"]/div/div[1]/div[2]/div/div[2]/div/div[2]/div[{index}]').get_attribute('innerHTML')
+                            f'//*[@id="main"]/div/div[1]/div[2]/div/div[3]/div/div[2]/div[{index}]').get_attribute('innerHTML')
             url = 'https://www.lennar.com' + myHTMLParser(html)
             result.append(url)
 
@@ -127,9 +179,9 @@ def cleanItUp(df):
     """
     *** needs to be fixed, but here for now
     """
-    df['Beds'] = df['Beds'].apply(lambda x : float(x.replace(" bd","")))
-    df['Baths'] = df['Baths'].apply(lambda x : float(x.replace(" ba","")))
-    df['Sqft'] = df['Sqft'].apply(lambda x : float(x.replace(" ft²", "").replace(",","")))
+    df['Beds'] = df[~df['Beds'].isna()]['Beds'].apply(lambda x : float(x.replace(" bd","")))
+    df['Baths'] = df[~df['Baths'].isna()]['Baths'].apply(lambda x : float(x.replace(" ba","")))
+    df['Sqft'] = df[~df['Sqft'].isna()]['Sqft'].apply(lambda x : float(x.replace(" ft²", "").replace(",","")))
     # df['Price'] = df.Price.replace('\D', '', regex=True).astype(int)
     # df['Price'] = df.apply(lambda row: row['Price'] if row['Availability'] != 'Future release' 
     #                     else row['Price']*1000, axis=1)
