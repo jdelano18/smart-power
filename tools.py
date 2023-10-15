@@ -121,6 +121,26 @@ def scrapeItUp(driver):
                 index += 1
                 continue
             
+            if result[0].startswith('New Home National Sales Event'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Sales Event Extended'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Why buy new'):
+                index += 1
+                continue
+                
+            if result[0].startswith('HUGE'):
+                index += 1
+                continue
+                
+            if result[0].startswith('Hello Autumn'):
+                index += 1
+                continue
+            
             ## drop all the stupid tags that are in the top right corner:
             for _ in range(3):
                 if result[0] not in ['Move-in ready', 'Under construction', 'Future release', 'Coming soon']:
@@ -179,6 +199,7 @@ def cleanItUp(df):
     """
     *** needs to be fixed, but here for now
     """
+    df['Beds'] = df['Beds'].replace('Studio', '0 bd')
     df['Beds'] = df[~df['Beds'].isna()]['Beds'].apply(lambda x : float(x.replace(" bd","")))
     df['Baths'] = df[~df['Baths'].isna()]['Baths'].apply(lambda x : float(x.replace(" ba","")))
     df['Sqft'] = df[~df['Sqft'].isna()]['Sqft'].apply(lambda x : float(x.replace(" ft²", "").replace(",","")))
