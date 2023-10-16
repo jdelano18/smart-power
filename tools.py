@@ -176,8 +176,11 @@ def scrapeItUp(driver):
             
             ## get link
             html = driver.find_element(By.XPATH, 
-                            f'//*[@id="main"]/div/div[1]/div[2]/div/div[3]/div/div[2]/div[{index}]').get_attribute('innerHTML')
+                            f'//*[@id="main"]//div[1]/div[2]//div[3]//div[2]/div[{index}]').get_attribute('innerHTML')
+            print(html)
             url = 'https://www.lennar.com' + myHTMLParser(html)
+            print(url)
+            print('-'*30)
             result.append(url)
 
             data.append(result)
